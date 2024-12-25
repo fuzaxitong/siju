@@ -71,7 +71,7 @@ const form = ref({
 const onSave = ()=>{
   console.log('save',form.value)
   let d = form.value
-  axios.put('http://localhost:18180/jeecg-boot/ext/tNode/edit',d).then(res=>{
+  axios.put('http://8.134.83.254:18180/jeecg-boot/ext/tNode/edit',d).then(res=>{
     console.log('res',res)
     nodeDialog.value = false
 
@@ -109,7 +109,7 @@ emitter.on("removeNode",(id)=>{
     return
   }
   // return;
-  axios.delete('http://localhost:18180/jeecg-boot/biz1/tNode/delete?id='+id).then(res=>{
+  axios.delete('http://8.134.83.254:18180/jeecg-boot/biz1/tNode/delete?id='+id).then(res=>{
     console.log('res',res)
     graph.value.removeNode(id)
     layout()
@@ -118,7 +118,7 @@ emitter.on("removeNode",(id)=>{
 
 emitter.on("overEdit",(nodeData)=>{
   let d = nodeData
-  axios.put('http://localhost:18180/jeecg-boot/biz1/tNode/edit',d).then(res=>{
+  axios.put('http://8.134.83.254:18180/jeecg-boot/biz1/tNode/edit',d).then(res=>{
     console.log('res',res)
   })
 })
@@ -142,7 +142,7 @@ emitter.on("add",(id)=>{
   let d = {id:uuid(),name:'test',pid:id}
 
   // return;
-  axios.post('http://localhost:18180/jeecg-boot/biz1/tNode/add',d).then(res=>{
+  axios.post('http://8.134.83.254:18180/jeecg-boot/biz1/tNode/add',d).then(res=>{
     console.log('res',res)
     let nodeData = {
       nodeId: d.id,
@@ -179,7 +179,7 @@ const graph = ref()
 // }
 
 const mergeCal = () =>{
-  axios.post('http://localhost:18180/jeecg-boot/ext/tNode/mergeCal',{projId:null}).then(res=>{
+  axios.post('http://8.134.83.254:18180/jeecg-boot/ext/tNode/mergeCal',{projId:null}).then(res=>{
     refresh()
   })
 }
@@ -312,7 +312,7 @@ function layout() {
   })
 }
 const refresh = async ()=>{
-  await axios.post('http://localhost:18180/jeecg-boot/ext/tNode/selAll').then(res => {
+  await axios.post('http://8.134.83.254:18180/jeecg-boot/ext/tNode/selAll').then(res => {
     console.log('res', res)
     let d = res.data.result
     console.log('d', d)
@@ -387,7 +387,7 @@ function setup() {
         callback: (action) => {
           let idList = cells.map(i => i.id)
           let ids = idList.join(',')
-          axios.delete('http://localhost:18180/jeecg-boot/biz1/tNode/deleteBatch?ids='+ids).then(res=>{
+          axios.delete('http://8.134.83.254:18180/jeecg-boot/biz1/tNode/deleteBatch?ids='+ids).then(res=>{
             console.log('res',res)
             idList.forEach(i=>graph.value.removeNode(i))
             layout()
@@ -410,7 +410,7 @@ function setup() {
       let d = {id:uuid(),name:'test',pid:cells[0].id}
       console.log('dddd',d)
       // return;
-      axios.post('http://localhost:18180/jeecg-boot/biz1/tNode/add',d).then(res=>{
+      axios.post('http://8.134.83.254:18180/jeecg-boot/biz1/tNode/add',d).then(res=>{
         console.log('res',res)
         let nodeData = {
           nodeId: d.id,
