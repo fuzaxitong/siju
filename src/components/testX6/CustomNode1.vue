@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="temp=='temp1'" style="min-height:100px;display: flex; background-color: #e7e7e7; border-radius: 10px" @dblclick.capture="dbclick">
+    <div v-if="temp=='temp1'" style=" min-height:100px;display: flex; background-color: #e7e7e7; border-radius: 10px" @dblclick.capture="dbclick">
       <div>
         <div v-if="imgUrl" class="c1" :style="{backgroundImage: 'url(\''+imgUrl+'\')'}"></div>
       </div>

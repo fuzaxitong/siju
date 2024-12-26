@@ -3,6 +3,7 @@
     <div>
       <el-button type="primary" @click="switchNodeTemp">切换节点样式</el-button>
       <el-button type="primary" @click="showProjList">项目列表</el-button>
+      <el-button type="primary" @click="updateNodeSize">更改大小</el-button>
       <el-button type="primary"  @click="mergeCal" style="float: right">汇聚计算</el-button>
       <div id="container" style="width: 98vw;height: 91vh"></div>
       <div id="minimap" style="border: 1px ;position: absolute;bottom: 30px;right: 50px;"></div>
@@ -184,6 +185,21 @@ const mergeCal = () =>{
   })
 }
 
+// 更新节点大小
+function updateNodeSize(id) {
+  const cells = graph.value.getSelectedCells()
+  if(!cells){
+    return
+  }
+  // 获取节点实例
+  const targetNode = graph.value.getCellById(cells[0].id);
+  if (targetNode) {
+    // 修改节点的宽度和高度
+    targetNode.resize(targetNode.size().height, targetNode.size().width); // 将节点的宽度修改为 300，高度修改为 150
+    layout()
+  }
+}
+
 const showProjList = ()=>{
   console.log('showProjList')
 }
@@ -245,53 +261,63 @@ const executeAnimate = () => {
 // 布局方向
 const dir = 'LR' // LR RL TB BT
 
-// 自动布局
 function layout() {
-  let nodes1 = graph.value.getNodes()
-  let edges1 = graph.value.getEdges()
-  const g = new dagre.graphlib.Graph()
-  g.setGraph({rankdir: dir, nodesep: 16, ranksep: 16})
-  g.setDefaultEdgeLabel(() => ({}))
+  let nodes1 = graph.value.getNodes();
+  let edges1 = graph.value.getEdges();
 
-  const width = 400
-  const height = 120
+  // 创建一个 Dagre 图
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({
+    rankdir: dir, // 排列方向：TB（自上而下），LR（从左到右）等
+    nodesep: 20,  // 水平节点间距
+    ranksep: 50,  // 垂直节点间距
+  });
+  g.setDefaultEdgeLabel(() => ({}));
+
+  // 遍历节点，动态设置节点大小
   nodes1.forEach((node) => {
-    g.setNode(node.id, {width, height})
-  })
+    const nodeWidth = node.size().width || 100; // 默认宽度
+    const nodeHeight = node.size().height || 50; // 默认高度
+    g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+  });
 
+  // 遍历边，设置边的源和目标
   edges1.forEach((edge) => {
-    const source = edge.getSource()
-    const target = edge.getTarget()
-    g.setEdge(source.cell, target.cell)
-  })
+    const source = edge.getSource();
+    const target = edge.getTarget();
+    g.setEdge(source.cell, target.cell);
+  });
 
-  dagre.layout(g)
+  // 使用 Dagre 进行布局计算
+  dagre.layout(g);
 
+  // 应用节点位置
   g.nodes().forEach((id) => {
-    const node = graph.value.getCellById(id)
+    const node = graph.value.getCellById(id);
     if (node) {
-      const pos = g.node(id)
-      node.position(pos.x, pos.y)
+      const pos = g.node(id);
+      node.position(pos.x - pos.width / 2, pos.y - pos.height / 2); // 居中对齐
     }
-  })
+  });
 
+  // 更新边的控制点
   edges1.forEach((edge) => {
-    const source = edge.getSourceNode()
-    const target = edge.getTargetNode()
-    const sourceBBox = source.getBBox()
-    const targetBBox = target.getBBox()
+    const source = edge.getSourceNode();
+    const target = edge.getTargetNode();
+    const sourceBBox = source.getBBox();
+    const targetBBox = target.getBBox();
 
     if ((dir === 'LR' || dir === 'RL') && sourceBBox.y !== targetBBox.y) {
       const gap =
           dir === 'LR'
               ? targetBBox.x - sourceBBox.x - sourceBBox.width
-              : -sourceBBox.x + targetBBox.x + targetBBox.width
-      const fix = dir === 'LR' ? sourceBBox.width : 0
-      const x = sourceBBox.x + fix + gap / 2
+              : -sourceBBox.x + targetBBox.x + targetBBox.width;
+      const fix = dir === 'LR' ? sourceBBox.width : 0;
+      const x = sourceBBox.x + fix + gap / 2;
       edge.setVertices([
-        {x, y: sourceBBox.center.y},
-        {x, y: targetBBox.center.y},
-      ])
+        { x, y: sourceBBox.center.y },
+        { x, y: targetBBox.center.y },
+      ]);
     } else if (
         (dir === 'TB' || dir === 'BT') &&
         sourceBBox.x !== targetBBox.x
@@ -299,18 +325,20 @@ function layout() {
       const gap =
           dir === 'TB'
               ? targetBBox.y - sourceBBox.y - sourceBBox.height
-              : -sourceBBox.y + targetBBox.y + targetBBox.height
-      const fix = dir === 'TB' ? sourceBBox.height : 0
-      const y = sourceBBox.y + fix + gap / 2
+              : -sourceBBox.y + targetBBox.y + targetBBox.height;
+      const fix = dir === 'TB' ? sourceBBox.height : 0;
+      const y = sourceBBox.y + fix + gap / 2;
       edge.setVertices([
-        {x: sourceBBox.center.x, y},
-        {x: targetBBox.center.x, y},
-      ])
+        { x: sourceBBox.center.x, y },
+        { x: targetBBox.center.x, y },
+      ]);
     } else {
-      edge.setVertices([])
+      edge.setVertices([]);
     }
-  })
+  });
 }
+
+
 const refresh = async ()=>{
   await axios.post('http://8.134.83.254:18180/jeecg-boot/ext/tNode/selAll').then(res => {
     console.log('res', res)
