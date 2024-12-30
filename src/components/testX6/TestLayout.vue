@@ -2,7 +2,7 @@
 <template>
   <div>
     <div>
-      <ElButton @click="autoLayout">自动布局</ElButton>
+      <ElButton @click="autoLayout(null)">自动布局</ElButton>
     </div>
     <div>
       <div id="container" style="width: 1000px;height: 1000px">
@@ -16,6 +16,25 @@
 <script>
 import {Graph} from "@antv/x6";
 
+let calMaxChildSize= (node)=>{
+  let childNodes = node.child
+  let nodeBox = node.getBBox()
+  let nodeHeight = nodeBox.height
+  let gap = 20
+
+  // 所有子节点的高度加上之间gap的高度
+  let totalHeight = 0
+  for(let i=0;i<childNodes.length;i++){
+    totalHeight += calMaxChildSize(childNodes[i])
+    if(i!=0){
+      totalHeight += gap
+    }
+  }
+
+  node.trueHeight = Math.max(totalHeight,nodeHeight)
+  return node.trueHeight
+}
+
 export default {
   name: "TestLayout",
   data() {
@@ -26,42 +45,67 @@ export default {
     }
   },
   methods:{
-    autoLayout(){
+    calTrueSize(){
+      // 根据parentId将列表组成树
+      this.nodes.forEach(i=>{
+        i.child = []
+      })
+
+      let root;
+      this.nodes.forEach(i=>{
+        if(i.store.data.parentId==0){
+          root = i
+          return
+        }
+        let parent = this.nodes.find(j=>j.id==i.store.data.parentId)
+        parent.child.push(i)
+      })
+
+      calMaxChildSize(root)
+      console.log('nodes2222222222222222',this.nodes)
+    },
+    autoLayout(rootNode){
+
+      // 先计算所有节点的trueHeight和trueWidth
+      if(!rootNode){
+        this.calTrueSize()
+      }
+
       // 找根节点，没有起始边的
       console.log('this.nodes',this.nodes)
-      let rootNode = this.nodes.find(i=>i.store.data.parentId==0);
+      if(!rootNode){
+        rootNode = this.nodes.find(i=>i.store.data.parentId==0);
+      }
+      console.log('rootNode111111111111111',rootNode)
       // 找子节点
       let childNodes = this.nodes.filter(i=>i.store.data.parentId==rootNode.id);
       console.log('childNodes',childNodes)
 
       let gap = 20
 
-      // 所有子节点的高度加上之间gap的高度
-      let totalHeight = 0
+      // 往父节点中心向上半个高度
+      let offset = -rootNode.trueHeight/2
+      console.log('offset333333333',offset,rootNode.id)
+
       for(let i=0;i<childNodes.length;i++){
-        let box = childNodes[i].getBBox()
-        totalHeight += box.height
-        if(i!=0){
-          totalHeight += gap
+        let topY = (rootNode.getBBox().y + rootNode.getBBox().y + rootNode.getBBox().height)/2  + offset
+        if(rootNode.id=='2'){
+          debugger
         }
+        let y = (topY+(topY+childNodes[i].trueHeight))/2
+        childNodes[i].setPosition(rootNode.getBBox().x+140,y-childNodes[i].getBBox().height/2)
+        offset += childNodes[i].trueHeight + gap
       }
-
-      // 往父节点向上偏移超出父节点高度的1/2
-      let offset =(totalHeight - rootNode.getBBox().height)/2
-      console.log('totalHeight',totalHeight)
-      console.log('offset',offset)
-
-      let curHeight = 0
-      for(let i=0;i<childNodes.length;i++){
-        let box = childNodes[i].getBBox()
-        let y = rootNode.getBBox().y - offset + curHeight
-        curHeight += box.height + gap
-        childNodes[i].setPosition(rootNode.getBBox().x+140,y)
-      }
-      // 移除所有边
-      this.edges = []
+      // 移除以该节点为起始的所有边
+      console.log('this.edges',this.edges)
+      this.edges = this.edges.filter(i=>i.store.data.source.cell!=rootNode.id)
+      // this.edges = this.edges.filter(i=>false)
       const edges = this.graph.getEdges();
-      edges.forEach(i=>this.graph.removeEdge(i))
+      edges.forEach(i=>{
+        if(this.edges.indexOf(i)<0){
+          this.graph.removeEdge(i)
+        }
+      })
       for(let i=0;i<childNodes.length;i++){
         let edge = this.graph.addEdge({
           source: {
@@ -101,6 +145,11 @@ export default {
 
         this.edges.push(edge)
       }
+
+      for(let i=0;i<childNodes.length;i++){
+        //递归下一层
+        this.autoLayout(childNodes[i])
+      }
     }
   },
   mounted() {
@@ -119,8 +168,8 @@ export default {
     // 添加节点
     let node1 = this.graph.addNode({
       id: '1',
-      x: 0,
-      y: 0,
+      x: 500,
+      y: 500,
       width: 100,
       height: 70,
       attrs: {
@@ -160,7 +209,7 @@ export default {
       id: '3',
       x: 0,
       y: 0,
-      width: 100,
+      width: 300,
       height: 50,
       attrs: {
         body: {
@@ -194,7 +243,26 @@ export default {
       parentId: node1.id
     })
 
-    this.nodes.push(node1,node2,node3,node4)
+    let node5= this.graph.addNode({
+      id: '5',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 300,
+      attrs: {
+        body: {
+          stroke: '#8f8f8f',
+          strokeWidth: 1,
+          fill: '#fff',
+          rx: 6,
+          ry: 6,
+        },
+      },
+      label: '节点5',
+      parentId: node2.id
+    })
+
+    this.nodes.push(node1,node2,node3,node4,node5)
 
 
     const node1Box = node1.getBBox();
