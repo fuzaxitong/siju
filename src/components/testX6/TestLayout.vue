@@ -62,7 +62,6 @@ export default {
       })
 
       calMaxChildSize(root)
-      console.log('nodes2222222222222222',this.nodes)
     },
     autoLayout(rootNode){
 
@@ -83,19 +82,33 @@ export default {
 
       let gap = 20
 
-      // 往父节点中心向上半个高度
-      let offset = -rootNode.trueHeight/2
-      console.log('offset333333333',offset,rootNode.id)
+      let totalChildHeight = 0
+      // 父元素真实高度和所有子元素真实高度+gap高度中最小的一个
+      let minHeight = rootNode.trueHeight
 
       for(let i=0;i<childNodes.length;i++){
-        let topY = (rootNode.getBBox().y + rootNode.getBBox().y + rootNode.getBBox().height)/2  + offset
-        if(rootNode.id=='2'){
-          debugger
+        totalChildHeight += childNodes[i].trueHeight
+        if(i!==0){
+          totalChildHeight += gap
         }
+      }
+
+      if(totalChildHeight<minHeight && totalChildHeight!=0){
+        minHeight = totalChildHeight
+        // console.log('22222222222222222222',totalChildHeight,minHeight)
+      }
+
+      // 往父节点中心向上偏移半个高度
+      let offset = -minHeight/2
+      // 父节点的中心位置
+      let parentCy = (rootNode.getBBox().y + rootNode.getBBox().y + rootNode.getBBox().height)/2
+      for(let i=0;i<childNodes.length;i++){
+        let topY = parentCy + offset
         let y = (topY+(topY+childNodes[i].trueHeight))/2
-        childNodes[i].setPosition(rootNode.getBBox().x+140,y-childNodes[i].getBBox().height/2)
+        childNodes[i].setPosition(rootNode.getBBox().x+rootNode.getBBox().width+40,y-childNodes[i].getBBox().height/2)
         offset += childNodes[i].trueHeight + gap
       }
+
       // 移除以该节点为起始的所有边
       console.log('this.edges',this.edges)
       this.edges = this.edges.filter(i=>i.store.data.source.cell!=rootNode.id)
@@ -159,15 +172,18 @@ export default {
           background: {
             color: '#F2F7FA',
           },
+          // 可拖拽
+          interactive: true,
+          // 可平移
+          panning: true,
           autoResize: true,
           mousewheel: true,
           grid: true
         }
     )
 
-    // 添加节点
-    let node1 = this.graph.addNode({
-      id: '1',
+    let root = this.graph.addNode({
+      id: 'id0',
       x: 500,
       y: 500,
       width: 100,
@@ -181,103 +197,136 @@ export default {
           ry: 6,
         },
       },
-      label: '节点1',
+      label: '根节点',
       parentId: '0'
     })
 
+    this.nodes = [root]
 
-    let node2 = this.graph.addNode({
-      id: '2',
-      x: 0,
-      y: 0,
-      width: 100,
-      height: 55,
-      attrs: {
-        body: {
-          stroke: '#8f8f8f',
-          strokeWidth: 1,
-          fill: '#fff',
-          rx: 6,
-          ry: 6,
+    for(let i=1;i<500;i++){
+      let pid = "id"+Math.floor(Math.random()*i)
+      if(pid=="id"+i){
+        pid = "id"+(i-1)
+      }
+      let node = this.graph.addNode({
+        id: 'id'+i,
+        x: 0,
+        y: 0,
+        width: 100 + Math.floor(Math.random()*300),
+        height: 70 + + Math.floor(Math.random()*300),
+        attrs: {
+          body: {
+            stroke: '#8f8f8f',
+            strokeWidth: 1,
+            fill: '#fff',
+            rx: 6,
+            ry: 6,
+          },
         },
-      },
-      label: '节点2',
-      parentId: node1.id
-    })
-
-    let node3 = this.graph.addNode({
-      id: '3',
-      x: 0,
-      y: 0,
-      width: 300,
-      height: 50,
-      attrs: {
-        body: {
-          stroke: '#8f8f8f',
-          strokeWidth: 1,
-          fill: '#fff',
-          rx: 6,
-          ry: 6,
-        },
-      },
-      label: '节点3',
-      parentId: node1.id
-    })
-
-    let node4= this.graph.addNode({
-      id: '4',
-      x: 0,
-      y: 0,
-      width: 100,
-      height: 40,
-      attrs: {
-        body: {
-          stroke: '#8f8f8f',
-          strokeWidth: 1,
-          fill: '#fff',
-          rx: 6,
-          ry: 6,
-        },
-      },
-      label: '节点4',
-      parentId: node1.id
-    })
-
-    let node5= this.graph.addNode({
-      id: '5',
-      x: 0,
-      y: 0,
-      width: 100,
-      height: 300,
-      attrs: {
-        body: {
-          stroke: '#8f8f8f',
-          strokeWidth: 1,
-          fill: '#fff',
-          rx: 6,
-          ry: 6,
-        },
-      },
-      label: '节点5',
-      parentId: node2.id
-    })
-
-    this.nodes.push(node1,node2,node3,node4,node5)
-
-
-    const node1Box = node1.getBBox();
-    const node2Box = node2.getBBox();
-
-    // 获取node1的最右侧的中间位置
-    const node1RightMiddle = {
-      x: node1Box.x + node1Box.width,
-      y: node1Box.y + node1Box.height / 2
+        label: '节点'+i,
+        parentId: pid
+      })
+      this.nodes.push(node)
     }
 
-    const node2LeftMiddle = {
-      x: node2Box.x,
-      y: node2Box.y + node1Box.height / 2
-    }
+    // // 添加节点
+    // let node1 = this.graph.addNode({
+    //   id: '1',
+    //   x: 500,
+    //   y: 500,
+    //   width: 100,
+    //   height: 70,
+    //   attrs: {
+    //     body: {
+    //       stroke: '#8f8f8f',
+    //       strokeWidth: 1,
+    //       fill: '#fff',
+    //       rx: 6,
+    //       ry: 6,
+    //     },
+    //   },
+    //   label: '节点1',
+    //   parentId: '0'
+    // })
+    //
+    //
+    // let node2 = this.graph.addNode({
+    //   id: '2',
+    //   x: 0,
+    //   y: 0,
+    //   width: 100,
+    //   height: 55,
+    //   attrs: {
+    //     body: {
+    //       stroke: '#8f8f8f',
+    //       strokeWidth: 1,
+    //       fill: '#fff',
+    //       rx: 6,
+    //       ry: 6,
+    //     },
+    //   },
+    //   label: '节点2',
+    //   parentId: node1.id
+    // })
+    //
+    // let node3 = this.graph.addNode({
+    //   id: '3',
+    //   x: 0,
+    //   y: 0,
+    //   width: 300,
+    //   height: 50,
+    //   attrs: {
+    //     body: {
+    //       stroke: '#8f8f8f',
+    //       strokeWidth: 1,
+    //       fill: '#fff',
+    //       rx: 6,
+    //       ry: 6,
+    //     },
+    //   },
+    //   label: '节点3',
+    //   parentId: node1.id
+    // })
+    //
+    // let node4= this.graph.addNode({
+    //   id: '4',
+    //   x: 0,
+    //   y: 0,
+    //   width: 100,
+    //   height: 40,
+    //   attrs: {
+    //     body: {
+    //       stroke: '#8f8f8f',
+    //       strokeWidth: 1,
+    //       fill: '#fff',
+    //       rx: 6,
+    //       ry: 6,
+    //     },
+    //   },
+    //   label: '节点4',
+    //   parentId: node1.id
+    // })
+    //
+    // let node5= this.graph.addNode({
+    //   id: '5',
+    //   x: 0,
+    //   y: 0,
+    //   width: 100,
+    //   height: 300,
+    //   attrs: {
+    //     body: {
+    //       stroke: '#8f8f8f',
+    //       strokeWidth: 1,
+    //       fill: '#fff',
+    //       rx: 6,
+    //       ry: 6,
+    //     },
+    //   },
+    //   label: '节点5',
+    //   parentId: node2.id
+    // })
+    //
+    // this.nodes.push(node1,node2,node3,node4,node5)
 
     // let edge1 = this.graph.addEdge({
     //   source: {
